@@ -80,7 +80,7 @@ class DownloadVideoService : Service() {
     }
 
     private fun broadcastUpdate(currentProgress: Int) {
-        val intent = Intent(DownloadVideoActivity.PROGRESS_UPDATE).apply {
+        val intent = Intent(DownloadVideoActivity.ACTION_PROGRESS_UPDATE).apply {
             putExtra("progress", currentProgress)
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)

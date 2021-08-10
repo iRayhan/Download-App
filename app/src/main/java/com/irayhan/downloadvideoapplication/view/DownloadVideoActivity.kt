@@ -33,8 +33,9 @@ import kotlinx.coroutines.launch
 class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
 
     companion object {
-        const val PROGRESS_UPDATE = "pu"
-        private const val PENDING_RC = 100
+        const val ACTION_PROGRESS_UPDATE = "pu"
+        private const val RC_PENDING_INTENT = 100
+        private var willNotificationShow = false
     }
 
     override val contentView: Int get() = R.layout.activity_download_video
@@ -43,7 +44,6 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
     private var channelName = "cname"
     private var downloadProgress = -1
     private var notificationId = 10
-    private var willNotificationShow = false
     private lateinit var notificationManager: NotificationManager
     private lateinit var notificationBuilder: NotificationCompat.Builder
 
@@ -69,14 +69,14 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
     }
 
     override fun onStop() {
-        super.onStop()
         willNotificationShow = true
+        super.onStop()
     }
 
     private fun registerReceiver() {
         val broadcastManager = LocalBroadcastManager.getInstance(this)
         val intentFilter = IntentFilter().apply {
-            addAction(PROGRESS_UPDATE)
+            addAction(ACTION_PROGRESS_UPDATE)
         }
         broadcastManager.registerReceiver(mBroadcastReceiver, intentFilter)
     }
@@ -84,7 +84,7 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
     private val mBroadcastReceiver = object : BroadcastReceiver() {
         @SuppressLint("SetTextI18n")
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == PROGRESS_UPDATE) {
+            if (intent.action == ACTION_PROGRESS_UPDATE) {
                 downloadProgress = intent.getIntExtra("progress", 0)
                 binding.progress.progress = downloadProgress
                 binding.txtProgress.text = "Downloaded: $downloadProgress%"
@@ -100,7 +100,6 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
         }
     }
 
-    @SuppressLint("UnspecifiedImmutableFlag")
     private fun setNotification() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -109,14 +108,11 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
         }
         notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_baseline_notifications)
-            .setContentTitle("Download in progress")
-            .setContentText("Downloaded: $downloadProgress%")
-            .setDefaults(Notification.DEFAULT_LIGHTS)
+            .setDefaults(Notification.DEFAULT_ALL)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setAutoCancel(true)
             .setProgress(100, downloadProgress, false)
-            .setContentIntent(PendingIntent.getActivity(this, PENDING_RC, intent, PendingIntent.FLAG_ONE_SHOT))
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
@@ -126,7 +122,7 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
             .setContentTitle(if (downloadProgress < 100) "Download in progress" else "Download Complete")
             .setContentText("Downloading: $downloadProgress%")
             .setProgress(100, downloadProgress, false)
-            .setContentIntent(PendingIntent.getActivity(this, PENDING_RC, intent, PendingIntent.FLAG_ONE_SHOT))
+            .setContentIntent(PendingIntent.getActivity(this, RC_PENDING_INTENT, intent, PendingIntent.FLAG_ONE_SHOT))
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
