@@ -36,6 +36,7 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
         const val ACTION_PROGRESS_UPDATE = "pu"
         private const val RC_PENDING_INTENT = 100
         private var willNotificationShow = false
+        private var isDownloadRequested = false
     }
 
     override val contentView: Int get() = R.layout.activity_download_video
@@ -44,6 +45,7 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
     private var channelName = "cname"
     private var downloadProgress = -1
     private var notificationId = 10
+    private val progressMax = 100
     private lateinit var notificationManager: NotificationManager
     private lateinit var notificationBuilder: NotificationCompat.Builder
 
@@ -57,8 +59,9 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
 
         // btn download
         binding.btnDownload.setOnClickListener {
-            if (downloadProgress in 0..99) Toast.makeText(this, "One download is in progress", Toast.LENGTH_SHORT).show()
+            if (isDownloadRequested) Toast.makeText(this, "One download is in progress", Toast.LENGTH_SHORT).show()
             else checkPermission()
+            isDownloadRequested = true
         }
     }
 
@@ -96,6 +99,8 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
                     }
                 }
 
+                if (downloadProgress >= 100) isDownloadRequested = false
+
             }
         }
     }
@@ -112,7 +117,6 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setAutoCancel(true)
-            .setProgress(100, downloadProgress, false)
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
@@ -121,7 +125,7 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
         notificationBuilder
             .setContentTitle(if (downloadProgress < 100) "Download in progress" else "Download Complete")
             .setContentText("Downloading: $downloadProgress%")
-            .setProgress(100, downloadProgress, false)
+            .setProgress(progressMax, downloadProgress, false)
             .setContentIntent(PendingIntent.getActivity(this, RC_PENDING_INTENT, intent, PendingIntent.FLAG_ONE_SHOT))
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
