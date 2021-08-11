@@ -24,12 +24,17 @@ import android.os.Build
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
 
     companion object {
         const val ACTION_PROGRESS_UPDATE = "pu"
+        private var willNotificationShow = false
+        private var isDownloadRequested = false
     }
 
     override val contentView: Int get() = R.layout.activity_download_video
@@ -39,8 +44,6 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
     private var downloadProgress = -1
     private val notificationId = 10
     private val progressMax = 100
-    private var willNotificationShow = false
-    private var isDownloadRequested = false
     private lateinit var notificationManager: NotificationManager
     private lateinit var notificationBuilder: NotificationCompat.Builder
 
@@ -90,7 +93,11 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
                 binding.txtProgress.text = "Downloaded: $downloadProgress%"
 
                 // if notification shows it will update
-                if (willNotificationShow && downloadProgress >= 0) updateNotification()
+                if (willNotificationShow && downloadProgress >= 0) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        updateNotification()
+                    }
+                }
 
                 // if download is complete can request another download
                 if (downloadProgress >= progressMax) isDownloadRequested = false
