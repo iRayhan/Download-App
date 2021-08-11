@@ -93,7 +93,7 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
                 binding.txtProgress.text = "Downloaded: $downloadProgress%"
 
                 // if notification shows it will update
-                if (willNotificationShow && downloadProgress >= 0) {
+                if (willNotificationShow) {
                     CoroutineScope(Dispatchers.IO).launch {
                         updateNotification()
                     }
@@ -101,7 +101,6 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
 
                 // if download is complete can request another download
                 if (downloadProgress >= progressMax) isDownloadRequested = false
-
             }
         }
     }

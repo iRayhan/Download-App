@@ -18,8 +18,7 @@
         <service
             android:name=".services.DownloadVideoService"
             android:enabled="true"
-            android:exported="true" >
-        </service>
+            android:exported="false" />
 
         <activity
             android:name=".view.DownloadVideoActivity"
