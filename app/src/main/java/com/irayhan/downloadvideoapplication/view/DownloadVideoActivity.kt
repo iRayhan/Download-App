@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import com.irayhan.downloadvideoapplication.R
@@ -25,27 +24,23 @@ import android.os.Build
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
 
     companion object {
         const val ACTION_PROGRESS_UPDATE = "pu"
-        private const val RC_PENDING_INTENT = 100
-        private var willNotificationShow = false
-        private var isDownloadRequested = false
     }
 
     override val contentView: Int get() = R.layout.activity_download_video
 
-    private var channelId = "cid"
-    private var channelName = "cname"
+    private val channelId = "cid"
+    private val channelName = "cname"
     private var downloadProgress = -1
-    private var notificationId = 10
+    private val notificationId = 10
     private val progressMax = 100
+    private var willNotificationShow = false
+    private var isDownloadRequested = false
     private lateinit var notificationManager: NotificationManager
     private lateinit var notificationBuilder: NotificationCompat.Builder
 
@@ -88,18 +83,17 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
         @SuppressLint("SetTextI18n")
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_PROGRESS_UPDATE) {
+
+                // show download status
                 downloadProgress = intent.getIntExtra("progress", 0)
                 binding.progress.progress = downloadProgress
                 binding.txtProgress.text = "Downloaded: $downloadProgress%"
 
-                // if notification is running it will update in background
-                if (willNotificationShow && downloadProgress >= 0) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        updateNotification()
-                    }
-                }
+                // if notification shows it will update
+                if (willNotificationShow && downloadProgress >= 0) updateNotification()
 
-                if (downloadProgress >= 100) isDownloadRequested = false
+                // if download is complete can request another download
+                if (downloadProgress >= progressMax) isDownloadRequested = false
 
             }
         }
@@ -120,13 +114,11 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
-    @SuppressLint("UnspecifiedImmutableFlag")
     private fun updateNotification() {
         notificationBuilder
-            .setContentTitle(if (downloadProgress < 100) "Download in progress" else "Download Complete")
+            .setContentTitle(if (downloadProgress < progressMax) "Download in progress" else "Download Complete")
             .setContentText("Downloading: $downloadProgress%")
             .setProgress(progressMax, downloadProgress, false)
-            .setContentIntent(PendingIntent.getActivity(this, RC_PENDING_INTENT, intent, PendingIntent.FLAG_ONE_SHOT))
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
