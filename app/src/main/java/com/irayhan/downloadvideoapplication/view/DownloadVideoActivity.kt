@@ -41,7 +41,6 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
 
     private val channelId = "cid"
     private val channelName = "cname"
-    private var downloadProgress = -1
     private val notificationId = 10
     private val progressMax = 100
     private lateinit var notificationManager: NotificationManager
@@ -64,14 +63,14 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
     }
 
     override fun onResume() {
+        super.onResume()
         willNotificationShow = false
         NotificationManagerCompat.from(this).cancel(notificationId)
-        super.onResume()
     }
 
-    override fun onStop() {
+    override fun onPause() {
+        super.onPause()
         willNotificationShow = true
-        super.onStop()
     }
 
     private fun registerReceiver() {
@@ -83,26 +82,33 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
     }
 
     private val mBroadcastReceiver = object : BroadcastReceiver() {
-        @SuppressLint("SetTextI18n")
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == ACTION_PROGRESS_UPDATE) {
 
+                // get download status
+                val downloadProgress = intent.getIntExtra("progress", 0)
+
                 // show download status
-                downloadProgress = intent.getIntExtra("progress", 0)
-                binding.progress.progress = downloadProgress
-                binding.txtProgress.text = "Downloaded: $downloadProgress%"
+                showDownloadStatus(downloadProgress)
 
                 // if notification shows it will update
                 if (willNotificationShow) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        updateNotification()
+                        updateNotification(downloadProgress)
                     }
                 }
 
-                // if download is complete can request another download
-                if (downloadProgress >= progressMax) isDownloadRequested = false
             }
         }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun showDownloadStatus(downloadProgress: Int) {
+        binding.progress.progress = downloadProgress
+        binding.txtProgress.text = "Downloaded: $downloadProgress%"
+
+        // if download is complete can request another download
+        if (downloadProgress >= progressMax) isDownloadRequested = false
     }
 
     private fun setNotification() {
@@ -120,7 +126,7 @@ class DownloadVideoActivity : BaseActivity<ActivityDownloadVideoBinding>() {
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
-    private fun updateNotification() {
+    private fun updateNotification(downloadProgress: Int) {
         notificationBuilder
             .setContentTitle(if (downloadProgress < progressMax) "Download in progress" else "Download Complete")
             .setContentText("Downloading: $downloadProgress%")
